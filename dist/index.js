@@ -30472,7 +30472,7 @@ async function fetchAndFilterEvents() {
         //     allEvents = additionalEvents.concat(allEvents);
         // } else {
         //     break;
-        // }
+        // } //
     }
 
     filteredEvents = filteredEvents.slice(0, eventLimit);
