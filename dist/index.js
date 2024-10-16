@@ -29954,6 +29954,7 @@ module.exports = {
     token: core.getInput('GITHUB_TOKEN', { required: true }),
     eventLimit: processEventLimit(core.getInput('EVENT_LIMIT')),
     style: processStyle(core.getInput('OUTPUT_STYLE')),
+    targetRepos: processIgnoreEvents(core.getInput('TARGET_REPOS')),
     ignoreEvents: processIgnoreEvents(core.getInput('IGNORE_EVENTS')),
     readmePath: core.getInput('README_PATH'),
     commitMessage: core.getInput('COMMIT_MESSAGE')
@@ -30351,7 +30352,7 @@ module.exports = {
 const github = __nccwpck_require__(2335);
 const core = __nccwpck_require__(9619);
 const eventDescriptions = __nccwpck_require__(2619);
-const { username, token, eventLimit, style, ignoreEvents } = __nccwpck_require__(9530);
+const { username, token, eventLimit, style, targetRepos, ignoreEvents } = __nccwpck_require__(9530);
 
 // Create an authenticated Octokit client
 const octokit = github.getOctokit(token);
@@ -30423,7 +30424,7 @@ async function fetchAllEvents() {
 
             // Check for API rate limit or pagination issues
             if (events.length === 0) {
-                core.warning('⚠️ No more events available.');
+                core.warning('⚠️ T5: No more events available.');
                 break; // No more events to fetch
             }
 
@@ -30454,6 +30455,7 @@ async function fetchAndFilterEvents() {
         filteredEvents = allEvents
             .filter(event => !ignoreEvents.includes(event.type))
             .filter(event => !isTriggeredByGitHubActions(event))
+            .filter(event => targetRepos.includes(event.repo.name))
             .map(event => {
                 if (event.type === 'WatchEvent') {
                     const isStarred = starredRepoNames.has(event.repo.name);
@@ -30463,13 +30465,14 @@ async function fetchAndFilterEvents() {
                 return event;
             })
             .slice(0, eventLimit);
-
-        if (filteredEvents.length < eventLimit) {
-            const additionalEvents = await fetchAllEvents();
-            allEvents = additionalEvents.concat(allEvents);
-        } else {
-            break;
-        }
+        break;
+        // if (filteredEvents.length < eventLimit) {
+        //     const additionalEvents = await fetchAllEvents();
+        //     if (additionalEvents.length === 0) break;
+        //     allEvents = additionalEvents.concat(allEvents);
+        // } else {
+        //     break;
+        // }
     }
 
     filteredEvents = filteredEvents.slice(0, eventLimit);
